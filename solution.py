@@ -144,6 +144,19 @@ class Solution2_BruteForce:
 """
     TODO: Describe how this works.  Illustrate 2D matrix.
           Point out that only 1/2 of the matrix is actually populated.
+          Explain that the matrix can NOT contain sub-string lengths
+          that propagate to matrix[0][0] because this breaks for 
+          the last test (review test data for specific reason).
+
+          Note that only 1/2 of the matrix memory could be used if the
+          address of each element were explicitly calculated within a
+          1D array.
+
+          Tracking both x and y of the lcs is not necessary if the 
+          lcs length is tracked and only one coordinate.  This also 
+          eliminates the need for an entire 2D table since onlt the last 
+          two rows are needed.  The algorithm could allocate two and leap
+          frog them (to reuse the oldest) with each iteration.
     
     Time = O(?)
 
