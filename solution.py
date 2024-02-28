@@ -29,12 +29,12 @@ from typing import Set
 """
 
 """
-    This is the baseline brute force implementation that confirms that all
-    tests work and are solved correctly.  This is intuitive logic that 
+    This is the baseline brute force implementation that confirms that the
+    problem is understood and all tests pass.  This is intuitive logic that 
     searches for each sub-string in the provided string.  A sub-string is
     composed of [1, n-1] characters, where 'n' is the number of characters
-    in 's'.  For example, the following 21 sub-strings are produced from 
-    the string "banana":
+    in 's'.  For example, the following 21 sub-strings exist within the 
+    string "banana":
 
      1: b
      2: ba
@@ -109,8 +109,8 @@ class Solution1_BruteForce:
         return lds
 
 """
-    This brute force implementation uses pointers (indexes) rather than
-    copying, which is faster, and it searches for sub-strings from longest
+    This optimized brute force implementation uses pointers (indexes) rather 
+    than copying, which is faster, and it searches for sub-strings from longest
     to shortest, which prevents shorter sub-strings from being pointlessly
     produced and evaluated after any [inherently longer] sub-string match 
     is found.
@@ -125,12 +125,13 @@ class Solution1_BruteForce:
 """
 class Solution2_BruteForce:
     def longestDupSubstring(self, s: str) -> str:
+        slen = len(s)
         cache = set()
         result = str()
 
-        for i in range(len(s)):
-            if len(s) - i > len(result): # Ignore smaller sub-strings.
-                for j in range(len(s), i, -1):
+        for i in range(slen):
+            if slen - i > len(result): # Ignore smaller sub-strings.
+                for j in range(slen, i, -1):
                     ss = s[i:j]
                     if ss in cache:
                         if len(result) < len(ss):
@@ -142,25 +143,139 @@ class Solution2_BruteForce:
         return result
 
 """
-    TODO: Describe how this works.  Illustrate 2D matrix.
-          Point out that only 1/2 of the matrix is actually populated.
-          Explain that the matrix can NOT contain sub-string lengths
-          that propagate to matrix[0][0] because this breaks for 
-          the last test (review test data for specific reason).
+    Bottom up DP solution.
+    The following 21 sub-strings exist within the example string "banana":
 
-          Note that only 1/2 of the matrix memory could be used if the
-          address of each element were explicitly calculated within a
-          1D array.
+     1: b
+     2: ba
+     3: ban
+     4: bana
+     5: banan
+     6: banana
 
-          Tracking both x and y of the lcs is not necessary if the 
-          lcs length is tracked and only one coordinate.  This also 
-          eliminates the need for an entire 2D table since onlt the last 
-          two rows are needed.  The algorithm could allocate two and leap
-          frog them (to reuse the oldest) with each iteration.
+     7: a
+     8: an
+     9: ana
+    10: anan
+    11: anana
+
+    12: n
+    13: na
+    14: nan
+    15: nana
+
+    16: a
+    17: an
+    18: ana
+
+    19: n
+    20: na
+
+    21: a
+
+    Notice: 
+        * The set of all sub-strings is composed of sub-strings with lengths 
+          in the range [1, n], where 'n' is the length of the input text 's'.
+        * Each character in 's' creates a sub-string of length 1.
+        * Each sub-string of length 2 is composed of each sub-string of length
+          1 PLUS the following character; each sub-string of length 3 is 
+          composed of each sub-string of length 2 PLUS the following character;
+          and so on up to sub-strings of length n-1.
+        * Each sub-string builds upon the sub-strings it contains, which is a
+          RECURRENCE RELATION.
     
-    Time = O(?)
+    DYNAMIC PROGRAMMING can be used to solve this recurrence relation problem.
+    This solution uses a 2D grid (a matrix) to detect sub-strings.  The grid
+    axes are both the input text 's'.  Each cell in the grid contains an 
+    integer whose value describes the length of the sub-string that starts 
+    with the input text character that corresponds to the cell.  This is the 
+    grid for the example input text "banana":
 
-    Space = O(?)
+           0      1      2      3      4      5      6
+           b      a      n      a      n      a
+        +------+------+------+------+------+------+------+
+        | diag |      |      |      |      |      |      |
+    0 b |  0   |  0   |  0   |  0   |  0   |  0   |  0   |
+        |      |      |      |      |      |      |      |
+        +------+------+------+------+------+------+------+
+        |      | diag |      |      |      |      |      |
+    1 a |  0   |  0   |  0   |  3 = |  0   |  1 = |  0   |
+        |      |      |      | 1+ 2↘|      | 1+ 0↘|      |
+        +------+------+------+------+------+------+------+
+        |      |      | diag |      |      |      |      |
+    2 n |  0   |  0   |  0   |  0   |  2 = |  0   |  0   |
+        |      |      |      |      | 1+ 1↘|      |      |
+        +------+------+------+------+------+------+------+
+        |      |      |      | diag |      |      |      |
+    3 a |  0   |  3 = |  0   |  0   |  0   |  1 = |  0   |
+        |      | 1+ 2↘|      |      |      | 1+ 0↘|      |
+        +------+------+------+------+------+------+------+
+        |      |      |      |      | diag |      |      |
+    4 n |  0   |  0   |  2 = |  0   |  0   |  0   |  0   |
+        |      |      | 1+ 1↘|      |      |      |      |
+        +------+------+------+------+------+------+------+
+        |      |      |      |      |      | diag |      |
+    5 a |  0   |  1 = |  0   |  1 = |  0   |  0   |  0   |
+        |      | 1+ 0↘|      | 1+ 0↘|      |      |      |
+        +------+------+------+------+------+------+------+
+        |      |      |      |      |      |      | diag |
+    6   |  0   |  0   |  0   |  0   |  0   |  0   |  0   |
+        |      |      |      |      |      |      |      |
+        +------+------+------+------+------+------+------+
+
+    Notice:
+        * There are n+1 rows and n+1 columns.
+        * The cells in the last row and the last column of each row are all 0.
+        * All cells on the diagnal from the upper left (0, 0) to the 
+          lower right (6, 6) are ZERO.  This diagnal represents the sub-string
+          composed of ALL characters in the input text 's'.  Since, for this
+          problem, sub-strings can NOT be composed of ALL characters in 's', 
+          i.e. they must have a length in the range [1, n-1], all cells on 
+          this diagnal are always / forced to zero.
+        * The value in a cell is zero when the characters at X and Y in the 
+          input text 's' do NOT match.  Cells with a value of zero (0) 
+          indicate that there are no matching sub-strings starting with the 
+          characters at indexes (X, Y) in the input text 's'.
+        * The value in a cell is one (1) PLUS the value in the adjacent south-
+          east cell, i.e. the cell one down and one to the right, when the 
+          characters at X and Y in the input text 's' DO match.  This is 
+          because sub-strings are composed of ADJACENT characters in 's' and 
+          adjacent characters in 's' land on diagnals.
+        * The sub-string patterns (cell values) north-east of the diagnal are 
+          the mirror image of the sub-string patterns (cell values) south-east 
+          of the diagnal.  Therefore, only half of the grid must be processed.
+
+    Processing begins in the lower right corner (6, 6) and proceedes right to 
+    left, bottom to top.  This results in all sub-problems being solved before
+    the super-problems whose results depends on them.  NOTE: since this is
+    tabluation, it's valid to begin in the top left corner (1, 1) and proceed
+    to the bottom right corner (6, 6), however to do so requires all the cells
+    of the top row and left column to be zero instead of the bottom row and 
+    right column.  Also, non-zero cell values would be 1 plus the value in the 
+    cell to the north-west rather than the south-east.
+
+    The algorithm tracks the largest cell value.  If there are multiple cells
+    with the same value then the algorithm will track only one of them, since
+    only one sub-string is produced as a result.
+
+    WARNING: If you should ever need only to determine the length of the 
+             longest duplicate sub-string, rather than the sub-string itself, 
+             then you may be tempted to replace the 0 cells with the max value 
+             of the adjacent cells to the right and down, however this will 
+             NOT work for inputs like: "abcabcxabcdabcabcabcd"
+
+    NOTE: The following algorithm could track the only one coordinate (either 
+          X or Y) and the sub-string size rather than tracking (X, Y).  This 
+          would also mean that only [the last] two rows would be needed to 
+          calculate everything rather than the entire grid.
+          Experiment with this in the next implementation.
+    
+    Time = O(n*n/2+n) => O(n**2)
+           n*n/2: Visiting 1/2 of matrix.
+           +n: Extract result from matrix.
+
+    Space = O(n**2)
+            Matrix size.
 """
 class Solution3_DP:
     def longestDupSubstring(self, s: str) -> str:
@@ -168,17 +283,16 @@ class Solution3_DP:
         slen = len(s)
         
         # Calculate sub-string lengths in matrix.
-        lcsCoords = (-1, -1)
+        ldsCoords = (-1, -1)
         m = [[0] * (slen + 1) for _ in range(slen + 1)] # 2D matrix.
         for y in range(slen - 1, -1, -1):
             for x in range(y, -1, -1):
                 if s[y] == s[x] and y != x:
                     m[y][x] = 1 + m[y + 1][x + 1]
-                    lcsx, lcsy = lcsCoords
-                    if m[y][x] > m[lcsy][lcsx]:
-                        lcsCoords = (x, y)
+                    ldsx, ldsy = ldsCoords
+                    if m[y][x] > m[ldsy][ldsx]:
+                        ldsCoords = (x, y)
                 else:
-                    #m[y][x] = max(m[y][x + 1], m[y + 1][x])
                     m[y][x] = 0
         
         # # Report the matrix (for debugging).
@@ -195,9 +309,9 @@ class Solution3_DP:
         #         print(f"{m[y][x]:2} ", end=str())
         #     print("")
 
-        if (-1, -1) != lcsCoords:
+        if (-1, -1) != ldsCoords:
             # Extract longest sub-string from matrix.
-            x, y = lcsCoords
+            x, y = ldsCoords
             for _ in range(m[y][x]):
                 result.append(s[x])
                 x += 1
